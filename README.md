@@ -29,7 +29,7 @@ $ rails _your_version_ new your_app --webpack=react
 
 ```ruby
 gem 'react-rails'
-gem 'react-rails-ssr'
+gem 'react-rails-ssr', github: 'yuchiXiong/react-rails-ssr'
 ```
 
 然后执行:
@@ -47,7 +47,7 @@ $ rails g react:ssr
 ```ruby
 gem 'webpacker'
 gem 'react-rails'
-gem 'react-rails-ssr'
+gem 'react-rails-ssr', github: 'yuchiXiong/react-rails-ssr'
 ```
 
 然后执行:
