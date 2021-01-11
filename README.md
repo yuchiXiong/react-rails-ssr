@@ -128,6 +128,4 @@ class Excample extends React.Component {
 
 更具体的描述为：在首次从浏览器打开页面时，首先看到无样式的页面结构，然后出现样式。
 
-请检查您的 `webpacker.yml default > extract_css` 是否为 `true` ，在 `webpacker 6.0` 之前，该配置项默认值为 `false` 。 
-
-[webpacker #2068](https://github.com/rails/webpacker/pull/2608)
+请检查您的 `webpacker.yml default > extract_css` 是否为 `true` ，在 `webpacker 6.0` 之前，该配置项默认值为 `false` （[webpacker #2068](https://github.com/rails/webpacker/pull/2608)）。
