@@ -8,7 +8,7 @@
 
 - [x] 基于 `react-dom/react-server-dom` 的服务端渲染
 - [x] 自带 `react-router` 支持
-- [x] 自带 `Scss` 支持
+- [x] 自带 `scss` 支持
 
 后续会补充一些内容，包括但不限于：
 
@@ -62,7 +62,7 @@ $ rails g react:ssr
 
 它将在您的项目中添加默认路由与视图，完成安装后启动并访问项目根路径即可看到演示应用。
 
-如果您是 `CRuby/MRI Ruby` 的用户，则您可以尝试在 `Gemfile` 中添加 `mini_racer` 来提升服务端渲染的速度，但使用 `CentOS` 的用户可能需要留意，实测该扩展无法在 `CentOS` 上安装。
+如果您是 `CRuby/MRI Ruby` 的用户，则您可以尝试在 `Gemfile` 中添加 `mini_racer` 来提升服务端渲染的速度，但使用 `CentOS` 的用户可能需要留意，实测该扩展无法在 `CentOS 7` 上安装。
 
 ```ruby
 gem 'mini_racer'
@@ -117,22 +117,17 @@ class Excample extends React.Component {
 
 ## 目前已知的事项
 
-### 1. 无法在 `React` 组件中引入样式文件，以及单独在 `packs/application.scss` 中导入样式会出现首屏闪屏的情况。
+### 1. 无法在 `React` 组件中引入样式文件。
 
-由于 `react-rails` 的服务端渲染实现没有对样式等进行处理，渲染 `react` 组件的 `NodeJS`
+由于 `react-rails` 的服务端渲染实现没有对样式进行处理，且用于渲染 `react` 组件的 `NodeJS`
 服务实际被隐藏在了其自有实现中，样式的处理需要使用单独的 [isomorphic-style-loader](https://github.com/kriasoft/isomorphic-style-loader) 来处理。
 
 目前暂时推荐单独引入样式文件到 `packs/application.scss` 。
 
-也正是因为 `react-rails` 服务端首屏仅渲染了最基本的 `HTML`，只有客户端二次渲染时才会将样式注入到页面中。因此您可能在刷新页面时会看到闪屏现象。
+### 2. 渲染首屏时出现闪屏现象
 
-在样式问题解决之前一个较为简单粗暴的解决方案是在 `Assets Pipeline` 的 `application.scss` 中加入 `React` 将要使用的样式文件，就像这样:
+更具体的描述为：在首次从浏览器打开页面时，首先看到无样式的页面结构，然后出现样式。
 
-```scss
-// app/assets/stylesheets/application.scss
-...
+请检查您的 `webpacker.yml default > extract_css` 是否为 `true` ，在 `webpacker 6.0` 之前，该配置项默认值为 `false` 。 
 
-@import "../../javascript/packs/react_ssr.scss";
-...
-```
-
+[webpacker #2068](https://github.com/rails/webpacker/pull/2608)
