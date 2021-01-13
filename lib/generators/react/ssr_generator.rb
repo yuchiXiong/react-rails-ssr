@@ -50,6 +50,23 @@ module React
         directory "#{__dir__}/template/app/javascript/src/", ::Rails.root.join('app', 'javascript', 'src')
       end
 
+      def reload_loader
+        app_root = ::Rails.root
+
+        say "add isomorphic-style-loader to your app"
+        run "yarn add -D isomorphic-style-loader"
+
+        directory "#{__dir__}/template/loaders/", ::Rails.root.join('config', 'webpack', 'loaders')
+        gsub_file app_root.join('config', 'webpack', 'environment.js'), "module.exports = environment" do
+          <<-'JS'
+
+const reloadStyleLoader = require('./loaders/isomorphic_style_loader');
+
+module.exports = reloadStyleLoader(environment)
+          JS
+        end
+      end
+
     end
   end
 end
