@@ -1,8 +1,6 @@
 import React from 'react';
-import mineStyle from './index.css';
-import withStyles from "../../containers/withIsomorphicStyle";
+import mineStyle from './index.module.css';
 
-// @withStyles(mineStyle)
 class Mine extends React.Component {
     render() {
         return <div className={mineStyle.mineContainer}>
@@ -11,4 +9,4 @@ class Mine extends React.Component {
     }
 }
 
-export default withStyles(Mine, mineStyle);
+export default Mine

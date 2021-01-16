@@ -69,64 +69,37 @@ gem 'mini_racer'
 
 ## 样式模块化
 
-`react-rails` 仅提供了最基础的 `prerender` 方案用来将 `React` 组件预渲染为静态 `HTML` 标签。由于服务端无法识别样式文件，因而当组件开启 `prerender` 时引入样式文件会报错。
+`webpacker` 开箱即用的支持 `css/scss/cssModule/scssModule` 。其默认配置遵循如下原则：
 
-`react-rails-ssr` 在 `react-rails` 的基础上配置了 [isomorphic-style-loader](https://github.com/kriasoft/isomorphic-style-loader)
-，使之能够解析并注入样式到静态 `HTML` 字符串模板上，就像 `style-loader` 一样。
+- 当 `webpacker.yml` 中的 `extract_css` 为 `false` 时，使用 `style-loader` 动态的将样式注入到页面中。
+- 当 `webpacker.yml` 中的 `extract_css` 为 `true` 时，使用 `mini-css-extract-plugin` 提取样式并打包为单文件。
 
-> 不过由于 `react_component view helper` 方法仅预渲染了组件，因而 `react-rails-ssr`
-找不到合适的时机将提取到的 `css` 字符串注入到页面的 `head` 标签中，目前只能在渲染首屏时将样式注入到 `body` 标签中。二次渲染时这些样式标签将被利用客户端 `API` 添加到 `head`
-标签中，它带来的副作用是您可能会在控制台看到服务端模板与客户端模板不一致的警告。
+在不讨论渲染环境的情况下，`style-loader` 将样式注入到页面最直接简单的方式就是使用 `DOM` 操作实现，但服务端渲染期是无法访问 `document/window`
+对象的，这是您在使用 `prerender: true` 后引入样式文件会报错的根本原因。
 
-无需 `*.module.scss` 即可直接使用模块特性：
+`react-rails-ssr` 尝试使用 `isomorphic-style-loader` 来替代 `style-loader` 实现注入，但 `react-rails` 无法干预定义在 `erb/slim/haml`
+中的 `head` 标签，因此最终还是选择了基于 `extract_css: true` 的方式来解决样式的问题，这也意味着 `rails g react:ssr` 的环节会自动修改 `webpacker.yml`
+的 `extract_css` 为 `true` 。
 
-```jsx
-import homeStyles from 'home.scss';
-```
-
-为了使样式能在首屏更好的被注入到页面中，您需要配合使用 `withStyles` 高阶组件，它与 `cssModule` 等高阶组件类似：
-
-```jsx
-import homeStyles from 'home.scss';
-import withStyles from 'containers/withIsomorphicStyle';
-
-class Home extends React.Component {
-    //  ...
-}
-
-export default withStyles(Home, homeStyles);
-```
-
-您也可以使用装饰器用法，不过前提是您需要在项目中配置，将下面内容加入到项目根目录下的 `babel.config.js` 中的 `plugins` 数组中：
-
-```js
-["@babel/plugin-proposal-decorators", {"legacy": true}]
-```
-
-然后安装依赖
-
-```shell
-$ npm install --save-dev @babel/plugin-proposal-decorators
-# or
-$ yarn add -D @babel/plugin-proposal-decorators
-```
-
-此时您可以以一种更清晰的方式组织您的组件：
+最后，您可以在组件中自由的引入样式。和 `react-rails` 一样，即便没有使用 `import` 引入样式，位于组件目录（`react-rails` 是 `components` 而 `react-rails-ssr`
+是 `src`
+）下的样式文件依然会被自动打包。我们推荐使用 `css module` 的方式来引入组件样式：
 
 ```jsx
 import React from 'react';
-import {connect} from 'react-redux';
-import withStyles from 'containers/withIsomorphicStyle';
-import homeStyles from 'home.scss';
 
-@withStyles(homeStyles)
-@connect(stat => {
-}, dispatch => {
-})
-class Home extends React.Component {
+// 全局样式直接引入
+import './App.css';
+import 'antd/dist/antd.css';
+
+// 组件样式使用模块化引入
+import styles from './index.scss';
+
+export default () => {
+    return <>
+        <h1 className={styles.title}>Hello! React Rails SSR!</h1>
+    </>
 }
-
-export default Home
 ```
 
 ## 数据注水与脱水

@@ -1,8 +1,7 @@
 import React from 'react';
 import logo from '../../assets/logo.svg';
-import withStyles from "../../containers/withIsomorphicStyle";
 
-import homeStyle from './index.css';
+import homeStyle from './index.module.css';
 
 class Home extends React.Component {
 
@@ -38,4 +37,4 @@ class Home extends React.Component {
     }
 }
 
-export default withStyles(Home, homeStyle);
+export default Home
