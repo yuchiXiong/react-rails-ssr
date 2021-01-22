@@ -123,7 +123,7 @@ end
 ```
 
 #### 1.2 在入口页将数据传入服务端组件 && 注入数据到页面
-
+**按照下面方法注入时需要对json数据添加 `html_safe`，否则 `JSON` 数据会出现被转义而无法在客户端解析的情况。**
 ```erb
 <%= react_component 'app', { path: request.path, react_props: @react_props }, { prerender: true } %>
 <script>
