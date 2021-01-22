@@ -104,12 +104,13 @@ export default () => {
 
 ## 数据注水与脱水
 
-在 `router` 的实现中已经加入了数据注入的环节，目前暂未做进一步的调优，如果您希望在首屏渲染时完成数据注入而不是二次渲染再拉取数据，则您可以参考如下几步操作：
+**该方案仅供参考**
+
+如果您希望在首屏渲染时完成数据注入而不是二次渲染组件挂载后再拉取数据，则您可以参考如下几步操作：
 
 #### 1.1 在 `controller` 层准备需要注入的数据
 
 ```ruby
-
 class ExampleController < ApplicationController
   def index
   ...
@@ -121,10 +122,14 @@ class ExampleController < ApplicationController
 end
 ```
 
-#### 1.2 在入口页中注入它
+#### 1.2 在入口页将数据传入服务端组件 && 注入数据到页面
 
 ```erb
 <%= react_component 'app', { path: request.path, react_props: @react_props }, { prerender: true } %>
+<script>
+    window.__REACT_RAILS_SSR__ =
+    <%= @react_props.to_json.html_safe %>
+</script>
 ```
 
 #### 1.3 在对应组件中获取并初始化状态
@@ -139,8 +144,8 @@ class Excample extends React.Component {
             }
         } else {
             this.state = {
-                total: [],
-                blogs: []
+                total: window.__REACT_RAILS_SSR__.total,
+                blogs: window.__REACT_RAILS_SSR__.blogs
             }
         }
     }
