@@ -6,13 +6,10 @@
 
 目前已经支持：
 
-- [x] 基于 `react-dom/react-server-dom` 的服务端渲染
-- [x] 开箱即用的 `react-router` 支持
-- [x] 开箱即用的模块化 `css/scss` 支持
-
-后续会补充一些内容，包括但不限于：
-
-- [ ] 自带 `redux` 支持
+- [x] 基于 `react-dom/react-server-dom` 的服务端渲染。
+- [x] 开箱即用的 `react-router` 支持。
+- [x] 开箱即用的模块化 `css/scss` 支持。
+- [x] `redux` 集成向导。
 
 **该扩展只是一个脚手架工具，您可以在执行安装后卸载它**。
 
@@ -75,7 +72,7 @@ gem 'mini_racer'
 - 当 `webpacker.yml` 中的 `extract_css` 为 `true` 时，使用 `mini-css-extract-plugin` 提取样式并打包为单文件。
 
 在不讨论渲染环境的情况下，`style-loader` 将样式注入到页面最直接简单的方式就是使用 `DOM` 操作实现，但服务端渲染期是无法访问 `document/window`
-对象的，这是您在使用 `prerender: true` 后引入样式文件会报错的根本原因。
+对象的，**这是您在使用 `prerender: true` 后引入样式文件会报错的根本原因**。
 
 `react-rails-ssr` 尝试使用 `isomorphic-style-loader` 来替代 `style-loader` 实现注入，但 `react-rails` 无法干预定义在 `erb/slim/haml`
 中的 `head` 标签，因此最终还是选择了基于 `extract_css: true` 的方式来解决样式的问题，这也意味着 `rails g react:ssr` 的环节会自动修改 `webpacker.yml`
@@ -104,16 +101,13 @@ export default () => {
 
 ## 数据注水与脱水
 
-**该方案仅供参考**
-
-如果您希望在首屏渲染时完成数据注入而不是二次渲染组件挂载后再拉取数据，则您可以参考如下几步操作：
-
-#### 1.1 在 `controller` 层准备需要注入的数据
+为保证服务端渲染与客户端二次渲染的数据一致性，基于 `react-rails-ssr` 的落地页需要提前在 `Controller` 层准备好数据：
 
 ```ruby
+
 class ExampleController < ApplicationController
   def index
-  ...
+    # ...
     @react_props = {
       blogs: blogs,
       total: total
@@ -122,17 +116,13 @@ class ExampleController < ApplicationController
 end
 ```
 
-#### 1.2 在入口页将数据传入服务端组件 && 注入数据到页面
-**按照下面方法注入时需要对json数据添加 `html_safe`，否则 `JSON` 数据会出现被转义而无法在客户端解析的情况。**
+然后在入口页中注入它：
+
 ```erb
 <%= react_component 'app', { path: request.path, react_props: @react_props }, { prerender: true } %>
-<script>
-    window.__REACT_RAILS_SSR__ =
-    <%= @react_props.to_json.html_safe %>
-</script>
 ```
 
-#### 1.3 在对应组件中获取并初始化状态
+最后您可以在对应组件中获取并初始化状态：
 
 ```javascript
 class Excample extends React.Component {
@@ -144,10 +134,85 @@ class Excample extends React.Component {
             }
         } else {
             this.state = {
-                total: window.__REACT_RAILS_SSR__.total,
-                blogs: window.__REACT_RAILS_SSR__.blogs
+                total: [],
+                blogs: []
             }
         }
     }
 }
+```
+
+## Redux 集成向导
+
+派生状态也许不是您想要的，推荐您使用 `redux` 来统一数据的分发与管理。
+
+但无论如何都需要强调： 您应该更理性的考虑您的需求，**大部分 `SPA` 是不需要服务端渲染的**。
+
+安装 `JavaScript` 依赖：
+
+```bash
+$ yarn add redux react-redux
+```
+
+然后调整入口组件，使用服务端数据初始化 `store`：
+
+```jsx
+// ...
+export default props => {
+    let initState = null;
+    if (typeof window === 'undefined') {
+        initState = props.react_props;
+    } else {
+        initState = window.__REACT_RAILS_SSR__;
+        window.__REACT_RAILS_SSR__ = props.path;
+    }
+
+    const store = createStore(initState);
+    return <Provider store={store}>
+        <IsomorphicRouter path={props.path}>
+            {/*  your app components  */}
+        </IsomorphicRouter>
+    </Provider>
+}
+```
+
+分发数据至消费组件，：
+
+```jsx
+// ...
+class Home extends React.Component {
+
+    render() {
+        const {title} = this.props;
+        return <h1>{title}</h1>
+    }
+}
+
+export default connect(state => state.blogPage)(Home);
+```
+
+当渲染的页面不是落地页时，需要从服务器拉取数据，可参考如下代码：
+
+```jsx
+// ...
+class Home extends React.Component {
+
+    componentDidMount() {
+        if (window.__REACT_RAILS_SSR__ !== this.props.match.url) {
+            this.props.fetchTitle(id);
+        }
+    }
+
+    render() {
+        const {title} = this.props;
+        return <h1>{title}</h1>
+    }
+}
+
+export default connect(state => state.blogPage,
+    dispatch => {
+        return {
+            fetchTitle: id => dispatch(fetchTitle(id)),
+        }
+    })(Home);
 ```

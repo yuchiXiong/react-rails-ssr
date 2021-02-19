@@ -24,21 +24,24 @@ module React
         app_root = ::Rails.root
 
         inject_into_file app_root.join('app', 'views', 'layouts', 'application.html.erb'), before: "</head>" do
-          <<-'ERB'
-    <%= stylesheet_pack_tag 'react_ssr', media: 'all', 'data-turbolinks-track': 'reload' %>
+          <<~'ERB'
+            <%= stylesheet_pack_tag 'react_ssr', media: 'all', 'data-turbolinks-track': 'reload' %>
           ERB
         end
 
         inject_into_file app_root.join('app', 'views', 'layouts', 'application.html.erb'), before: "</body>" do
-          <<-'ERB'
-
-    <%= react_component 'app', { path: request.path }, { prerender: true } %>
+          <<~'ERB'
+            <%= react_component 'app', { path: request.path, react_props: @react_props }, { prerender: true } %>
           ERB
         end
 
         inject_into_file app_root.join('app', 'views', 'layouts', 'application.html.erb'), before: "</body>" do
-          <<-'ERB'
-  <%= javascript_pack_tag 'react_ssr', 'data-turbolinks-track': 'reload' %>
+          <<~'ERB'
+            <%= javascript_pack_tag 'react_ssr', 'data-turbolinks-track': 'reload' %>
+            <script>
+                window.__REACT_RAILS_SSR__ =
+                <%= @react_props.to_json.html_safe %>
+            </script>
           ERB
         end
       end
